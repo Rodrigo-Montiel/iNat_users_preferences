@@ -56,3 +56,5 @@ tests
 /code/_draft
 /data/_draft
 /figs/_draft
+
+**/*.quarto_ipynb

@@ -633,6 +633,7 @@ plants_per_user <- plants %>%
 #|  - 'Users for tetrapods'
 #|  - 'Observations for plants'
 #|  - 'Users for plants'
+#|  - 'Records per user category'
 
 
 tibble(Group = c('tetrapods', 'plants'),
@@ -698,6 +699,87 @@ plants %>%
                   booktabs = T) %>% 
   kableExtra::kable_styling(latex_options = c('striped', 'hold_position'))
 
+observations_dataset %>%
+  count(user_category, user_id, name = "n_records") %>%
+  group_by(user_category) %>%
+  summarise(n_users = n(),
+            mean_records = mean(n_records),
+            sd_records = sd(n_records),
+            se_records = sd_records / sqrt(n_users),
+            median_records = median(n_records),
+            min_records = min(n_records),
+            max_records = max(n_records), .groups = "drop") %>% 
+  kableExtra::kbl(format.args = list(decimal.mark = '.', 
+                                     big.mark = ","),
+                  digits=2,
+                  booktabs = T) %>% 
+  kableExtra::kable_styling(latex_options = c('striped', 'hold_position'))
+
+mean_records_per_user <- observations_dataset %>%
+  count(user_category, user_login, name = "n_records") %>%
+  group_by(user_category) %>%
+  summarise(n_users = n(),
+            mean_records = mean(n_records),
+            sd_records = sd(n_records),
+            se_records = sd_records / sqrt(n_users),
+            .groups = "drop") %>%
+  mutate(user_category = factor(user_category,
+                                levels = c("beginner", "intermediate", "expert"))) %>% 
+  ggplot(aes(user_category, mean_records)) +
+  geom_col(aes(fill =user_category), width = 0.7, show.legend = F) +
+  geom_errorbar(aes(ymin = mean_records - se_records,
+                    ymax = mean_records + se_records),
+                width = 0.2) +
+  scale_y_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_fill_brewer(palette = 'Blues') + 
+  labs(x = "", y = "Number of records per user") +
+  ggpubr::theme_pubclean() +
+  ggtitle('(a)') 
+
+mean_records_per_user_tetrapods <- tetrapods %>%
+  count(user_category, user_login, name = "n_records") %>%
+  group_by(user_category) %>%
+  summarise(n_users = n(),
+            mean_records = mean(n_records),
+            sd_records = sd(n_records),
+            se_records = sd_records / sqrt(n_users),
+            .groups = "drop") %>% 
+  mutate(user_category = factor(user_category,
+                                levels = c("beginner", "intermediate", "expert"))) %>% 
+  ggplot(aes(user_category, mean_records)) +
+  geom_col(aes(fill =user_category), width = 0.7, show.legend = F) +
+  geom_errorbar(aes(ymin = mean_records - se_records,
+                    ymax = mean_records + se_records),
+                width = 0.2) +
+  scale_y_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_fill_brewer(palette = 'OrRd') + 
+  labs(x = "", y = "Number of records per user (tetrapods)") +
+  ggpubr::theme_pubclean() +
+  ggtitle('(b)') 
+
+
+mean_records_per_user_plants <- plants %>%
+  count(user_category, user_login, name = "n_records") %>%
+  group_by(user_category) %>%
+  summarise(n_users = n(),
+            mean_records = mean(n_records),
+            sd_records = sd(n_records),
+            se_records = sd_records / sqrt(n_users),
+            .groups = "drop") %>% 
+  mutate(user_category = factor(user_category,
+                                levels = c("beginner", "intermediate", "expert"))) %>% 
+  ggplot(aes(user_category, mean_records)) +
+  geom_col(aes(fill =user_category), width = 0.7, show.legend = F) +
+  geom_errorbar(aes(ymin = mean_records - se_records,
+                    ymax = mean_records + se_records),
+                width = 0.2) +
+  scale_y_continuous(breaks = scales::breaks_pretty(n = 8)) +
+  scale_fill_brewer(palette = 'Greens') + 
+  labs(x = "", y = "Number of records per user (plants)") +
+  ggpubr::theme_pubclean() +
+  ggtitle('(c)') 
+
+mean_records_per_user + mean_records_per_user_tetrapods + mean_records_per_user_plants
 ```
 
 ### Tetrapods
@@ -1134,13 +1216,11 @@ coverage %>%
 # distribution
 tetra_plot_distribution <- tetrapods %>% 
   group_by(user_category, dist_class) %>% count() %>% 
-  ggplot(aes(x='', y=n, fill= factor(dist_class,
+  ggplot(aes(x=user_category, y=n, fill= factor(dist_class,
                                      levels = c('narrow', 'medium', 'wide')))) +
   geom_bar(width = 0.5, stat = 'identity', show.legend = T, 
            position = 'fill') + 
   labs(x='', y='Proportion of records', fill = 'distribution') + 
-  facet_grid(~ factor(user_category, 
-                      levels = c('beginner', 'intermediate', 'expert'))) + 
   scale_fill_brewer(palette = 'OrRd', name='distribution area') + 
  ggpubr::theme_pubclean() + theme(legend.position = 'bottom') +
   ggtitle('(a)') 
@@ -1148,13 +1228,11 @@ tetra_plot_distribution <- tetrapods %>%
 # size
 tetra_plot_size <- tetrapods %>% 
   group_by(user_category, size_class) %>% count() %>% 
-  ggplot(aes(x='', y=n, fill= factor(size_class,
+  ggplot(aes(x=user_category, y=n, fill= factor(size_class,
                                      levels = c('small', 'medium', 'large')))) +
   geom_bar(width = 0.5, stat = 'identity', show.legend = T, 
            position = 'fill') + 
   labs(x='', y='', fill = 'size') + 
-  facet_grid(~ factor(user_category, 
-                      levels = c('beginner', 'intermediate', 'expert'))) + 
   scale_fill_brewer(palette = 'OrRd', name='body size') + 
   ggpubr::theme_pubclean() + theme(legend.position = 'bottom')  +
   ggtitle('(b)') 
@@ -1163,13 +1241,11 @@ tetra_plot_size <- tetrapods %>%
 # conservation status
 tetra_plot_status <- tetrapods %>% 
   group_by(user_category, status) %>% count() %>% 
-  ggplot(aes(x='', y=n, fill= factor(status,
+  ggplot(aes(x=user_category, y=n, fill= factor(status,
   levels = c('NE', 'DD', 'CR', 'EN', 'VU', 'NT', 'LC')))) +
   geom_bar(width = 0.5, stat = 'identity', show.legend = T, 
            position = 'fill') + 
   labs(x='', y='', fill = 'IUCNglobal') + 
-  facet_grid(~ factor(user_category, 
-                      levels = c('beginner', 'intermediate', 'expert'))) + 
   scale_fill_brewer(palette = 'OrRd', name='conservation status') + 
   ggpubr::theme_pubclean() + theme(legend.position = 'bottom')  +
   ggtitle('(c)') 
@@ -1187,16 +1263,14 @@ tetra_plots
 # distribution
 plants_plot_distribution <- plants %>% 
   group_by(user_category, dist_class) %>% count() %>% 
-  ggplot(aes(x='', y=n, fill= factor(dist_class,
+  ggplot(aes(x=user_category, y=n, fill= factor(dist_class,
                                      levels = c('narrow', 'medium', 'wide')))) +
   geom_bar(width = 0.5, stat = 'identity', show.legend = T, 
            position = 'fill') + 
   labs(x='', y='Proportion of records', fill = 'distribution') + 
-  facet_grid(~ factor(user_category, 
-                      levels = c('beginner', 'intermediate', 'expert'))) + 
   scale_fill_brewer(palette = 'Greens', name='distribution area') + 
  ggpubr::theme_pubclean() + theme(legend.position = 'bottom') +
-  ggtitle('(a)') 
+  ggtitle('(d)') 
 
 # size
 plants_plot_growth <- plants %>%
@@ -1211,28 +1285,25 @@ plants_plot_growth <- plants %>%
                                            'expert'))) %>%
   group_by(user_category, growth) %>%
   count() %>%
-  ggplot(aes(x = "", y = n, fill = growth)) +
+  ggplot(aes(x = user_category, y = n, fill = growth)) +
   geom_bar(width = 0.5, stat = "identity", show.legend = TRUE, position = "fill") + 
   labs(x = "", y = "", fill = "growth form") + 
-  facet_grid(~ user_category) + 
   scale_fill_brewer(palette = 'Greens', name='growth form') + 
  ggpubr::theme_pubclean() + theme(legend.position = 'bottom') +
-  ggtitle('(b)') 
+  ggtitle('(e)') 
 
 
 # conservation status
 plants_plot_status <- plants %>% 
   group_by(user_category, status) %>% count() %>% 
-  ggplot(aes(x='', y=n, fill= factor(status,
+  ggplot(aes(x=user_category, y=n, fill= factor(status,
   levels = c('NE', 'DD', 'CR', 'EN', 'VU', 'NT', 'LC')))) +
   geom_bar(width = 0.5, stat = 'identity', show.legend = T, 
            position = 'fill') + 
   labs(x='', y='', fill = 'IUCNglobal') + 
-  facet_grid(~ factor(user_category, 
-                      levels = c('beginner', 'intermediate', 'expert'))) + 
   scale_fill_brewer(palette = 'Greens', name='conservation status') + 
   ggpubr::theme_pubclean() + theme(legend.position = 'bottom') +
-  ggtitle('(c)') 
+  ggtitle('(f)') 
 
 
 plants_plots <- plants_plot_distribution | plants_plot_growth | plants_plot_status
